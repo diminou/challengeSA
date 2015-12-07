@@ -57,6 +57,9 @@ def couple_to_string(couple):
 def list_to_string(list):
     return "|".join(map(couple_to_string, list))
 
+def list_to_string_addrs(addrs):
+   return u"|".join(addrs)
+
 #print(list(build_grid(magny_coords, (0.1, 0.2), (10, 10))))
 
 #+ "&arrival_time=" + str(timestamp)
@@ -105,6 +108,54 @@ def filter_results(results):
 res = request_with_pause(build_rgeo_requests((48.742858,2.087692), .2, .05), .1)
 for i in filter_results(res):
    print(i)
+
+
+def chunks(l, n):
+   return [l[i:i+n] for i in range(0, len(l), n)]
+
+res2 = chunks(list(filter_results(res)), 10)
+
+print(res2)
+
+def spaces_to_plus(string):
+   return string.replace(u' ', u'+')
+
+def request_from_od(origins, destinations, timestamp):
+   req = "https://maps.googleapis.com/maps/api/distancematrix/json?origins="\
+          + list_to_string_addrs(map(spaces_to_plus, origins)) + "&destinations="\
+          + list_to_string_addrs(map(spaces_to_plus, destinations)) + "&mode=driving" \
+          + "&language=fr-FR&key=" + key
+   return req
+
+
+print(request_from_od(res2[0], [u"1 rue Geneviève Aubé Châteaufort France"], 1451462400))
+
+#r = requests.get(request_from_od(res2[0], [u"1 rue Geneviève Aubé Châteaufort France"], 1451462400))
+
+#print(r.status_code)
+#print(r.text)
+
+r2 = requests.get(request_from_od([u"1 rue Geneviève Aubé Châteaufort France"], res2[0], 1451462400))
+
+print(r2.status_code)
+print(r2.text)
+
+
+def grequests(llorigins, lldestinations, timestamp, pause):
+   result = []
+   for lorigins in llorigins:
+      for ldestinations in lldestinations:
+         r = request_from_od(lorigins, ldestinations, timestamp)
+         result.append(requests.get(r).text)
+         time.sleep(pause)
+   return result
+
+def dump_results(grequest_results, path):
+   with open(path, 'a') as f:
+      for res in grequest_results:
+         f.write(res)
+
+         
 #rg = build_rgeo_requests((48.742858,2.087692), 30, 3)
 #for i in rg:
 #   print(i)
